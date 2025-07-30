@@ -430,7 +430,7 @@ def generate_attr(processor, model, attribute_total):
     data_pro = processor(text=attribute_total, return_tensors="pt", padding=True).to(
         model.device
     )
-    data_pro = model.module.get_text_features(**data_pro)
+    data_pro = model.get_text_features(**data_pro)
     return data_pro
 
 
@@ -675,8 +675,8 @@ def main(args):
     unet = UNet2DConditionModel.from_pretrained(
         args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision
     )
-    model = CLIPModel.from_pretrained("model/clip-vit-large-patch14")
-    processor = CLIPProcessor.from_pretrained("model/clip-vit-large-patch14")
+    model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14")
+    processor = CLIPProcessor.from_pretrained("openai/clip-vit-large-patch14")
 
     # Load image encoder and FC
     encoder = image_encoder()
@@ -928,7 +928,7 @@ def main(args):
     total_attr_embed = generate_attr(processor, model, total_attr).detach()
     attr_coefficient = get_coefficient()
     num = 0
-    linear_project = model.module.text_projection.to(weight_dtype)
+    linear_project = model.text_projection.to(weight_dtype)
     for epoch in range(first_epoch, args.num_train_epochs):
         encoder.eval()
         mapper.train()
@@ -956,9 +956,7 @@ def main(args):
                     pred_emd.register_hook(change_grad)
 
                     # Change the embedding of new token
-                    token_embeds = (
-                        text_encoder.module.get_input_embeddings().weight.data
-                    )
+                    token_embeds = text_encoder.get_input_embeddings().weight.data
                     token_embeds[placeholder_token_ids] = pred_emd
 
                     # Convert images to latent space
@@ -1024,7 +1022,7 @@ def main(args):
                         loss_attr = fun_loss_attr(score, index_attr)
                     else:
                         loss_attr = torch.tensor([0.0], requires_grad=True).to(
-                            mapper.device
+                            pred_emd.device
                         )
                     if batch["attribute"][0] in attr_coefficient:
                         attr_rate = attr_coefficient[batch["attribute"][0]][
@@ -1051,7 +1049,7 @@ def main(args):
 
                     accelerator.backward(loss_forward)
                     grad_pseudo = (
-                        text_encoder.module.get_input_embeddings()
+                        text_encoder.get_input_embeddings()
                         .weight.grad[-1]
                         .detach()
                         .unsqueeze(0)
@@ -1061,7 +1059,7 @@ def main(args):
                     loss_fake = torch.mean(pred_emd)
                     loss = 0 * loss_fake
                     accelerator.backward(loss)
-                    text_encoder.module.get_input_embeddings().weight.grad[-1] *= 0
+                    text_encoder.get_input_embeddings().weight.grad[-1] *= 0
 
                     optimizer.step()
                     lr_scheduler.step()

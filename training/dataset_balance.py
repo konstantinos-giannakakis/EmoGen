@@ -4,43 +4,39 @@ import random
 import pickle
 from tqdm import tqdm
 
-property = "scene"  # "object"
+property = "object"  # "object"
 data_root = f"/mnt/c/Users/giann/Downloads/EmoSet-118K_organized/{property}"
 image_paths = []
 
-# Limit for quick testing
-SAMPLE_LIMIT = 20  # Set to a small number for a quick test
-processed = 0
 
-
-for root, _, file_path in tqdm(
-    os.walk(data_root),
-    desc="Processing images",
-):
-    if processed >= SAMPLE_LIMIT:
-        break
+# Collect all jpg files first
+all_jpg_files = []
+for root, _, file_path in os.walk(data_root):
     for file in file_path:
         if file.endswith("jpg"):
-            flag = False
-            path = os.path.join(root, file)
-            emotion = path.split("/")[-1].split("_")[0]
-            number = path.split("/")[-1].split(".")[0].split("_")[1]
-            attribute = path.split("/")[-2].split(")")[-1].lower().replace(" ", "_")
-            annotion_path = f"/mnt/c/Users/giann/Downloads/EmoSet-118K/annotation/{emotion}/{emotion}_{number}.json"
-            annotion = json.load(open(annotion_path, "r"))
-            if "scene" in annotion:
-                flag = True
-                tmp = annotion["scene"].lower().replace(" ", "_")
-                if tmp == attribute:
-                    image_paths.append(path)
-            if flag is False:
-                try:
-                    tmp = annotion["object"][0].lower().replace(" ", "_")
-                    if tmp == attribute:
-                        image_paths.append(path)
-                except:
-                    print("annotation is wrong")
-            processed += 1
+            all_jpg_files.append((root, file))
+
+# Single tqdm progress bar for all images
+for root, file in tqdm(all_jpg_files, desc="Processing images"):
+    flag = False
+    path = os.path.join(root, file)
+    emotion = path.split("/")[-1].split("_")[0]
+    number = path.split("/")[-1].split(".")[0].split("_")[1]
+    attribute = path.split("/")[-2].split(")")[-1].lower().replace(" ", "_")
+    annotion_path = f"/mnt/c/Users/giann/Downloads/EmoSet-118K/annotation/{emotion}/{emotion}_{number}.json"
+    annotion = json.load(open(annotion_path, "r"))
+    if "scene" in annotion:
+        flag = True
+        tmp = annotion["scene"].lower().replace(" ", "_")
+        if tmp == attribute:
+            image_paths.append(path)
+    if flag is False:
+        try:
+            tmp = annotion["object"][0].lower().replace(" ", "_")
+            if tmp == attribute:
+                image_paths.append(path)
+        except:
+            print("annotation is wrong")
 
 # Calculate the number of samples for each emotion label
 emotion_counts = {}
