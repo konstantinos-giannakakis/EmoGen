@@ -24,6 +24,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from model import *
 from inference import inference, generate
+
 # TODO: remove and import from diffusers.utils when the new version of diffusers is released
 from packaging import version
 from PIL import Image
@@ -46,9 +47,25 @@ from diffusers.utils import check_min_version, is_wandb_available
 from diffusers.utils.import_utils import is_xformers_available
 
 
-def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable_property, max_train_steps,
-               num_train_epochs, attr_rate, threshold, seed, emo_rate,
-               learning_rate, output_dir, model, num_fc_layers, need_LN=False, need_ReLU=False, need_Dropout=False):
+def parse_args(
+    pretrained_model_name_or_path,
+    emotion,
+    train_data_dir,
+    learnable_property,
+    max_train_steps,
+    num_train_epochs,
+    attr_rate,
+    threshold,
+    seed,
+    emo_rate,
+    learning_rate,
+    output_dir,
+    model,
+    num_fc_layers,
+    need_LN=False,
+    need_ReLU=False,
+    need_Dropout=False,
+):
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
     parser.add_argument(
         "--save_steps",
@@ -136,7 +153,10 @@ def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable
         help="Pretrained tokenizer name or path if not the same as model_name",
     )
     parser.add_argument(
-        "--train_data_dir", type=str, default=train_data_dir, help="A folder containing the training data."
+        "--train_data_dir",
+        type=str,
+        default=train_data_dir,
+        help="A folder containing the training data.",
     )
     parser.add_argument(
         "--placeholder_token",
@@ -145,18 +165,32 @@ def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable
         help="A token to use as a placeholder for the concept.",
     )
     parser.add_argument(
-        "--initializer_token", type=str, default="cat", help="A token to use as initializer word."
+        "--initializer_token",
+        type=str,
+        default="cat",
+        help="A token to use as initializer word.",
     )
-    parser.add_argument("--learnable_property", type=list, default=learnable_property,
-                        help="Choose between 'object' and 'scene'")
-    parser.add_argument("--repeats", type=int, default=1, help="How many times to repeat the training data.")
+    parser.add_argument(
+        "--learnable_property",
+        type=list,
+        default=learnable_property,
+        help="Choose between 'object' and 'scene'",
+    )
+    parser.add_argument(
+        "--repeats",
+        type=int,
+        default=1,
+        help="How many times to repeat the training data.",
+    )
     parser.add_argument(
         "--output_dir",
         type=str,
         default=output_dir,
         help="The output directory where the model predictions and checkpoints will be written.",
     )
-    parser.add_argument("--seed", type=int, default=seed, help="A seed for reproducible training.")
+    parser.add_argument(
+        "--seed", type=int, default=seed, help="A seed for reproducible training."
+    )
     parser.add_argument(
         "--resolution",
         type=int,
@@ -167,10 +201,15 @@ def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable
         ),
     )
     parser.add_argument(
-        "--center_crop", action="store_true", help="Whether to center crop images before resizing to resolution."
+        "--center_crop",
+        action="store_true",
+        help="Whether to center crop images before resizing to resolution.",
     )
     parser.add_argument(
-        "--train_batch_size", type=int, default=1, help="Batch size (per device) for the training dataloader."
+        "--train_batch_size",
+        type=int,
+        default=1,
+        help="Batch size (per device) for the training dataloader.",
     )
     parser.add_argument("--num_train_epochs", type=int, default=num_train_epochs)
     parser.add_argument(
@@ -212,7 +251,10 @@ def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable
         ),
     )
     parser.add_argument(
-        "--lr_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler."
+        "--lr_warmup_steps",
+        type=int,
+        default=0,
+        help="Number of steps for the warmup in the lr scheduler.",
     )
     parser.add_argument(
         "--lr_num_cycles",
@@ -228,12 +270,38 @@ def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable
             "Number of subprocesses to use for data loading. 0 means that the data will be loaded in the main process."
         ),
     )
-    parser.add_argument("--adam_beta1", type=float, default=0.9, help="The beta1 parameter for the Adam optimizer.")
-    parser.add_argument("--adam_beta2", type=float, default=0.999, help="The beta2 parameter for the Adam optimizer.")
-    parser.add_argument("--adam_weight_decay", type=float, default=1e-2, help="Weight decay to use.")
-    parser.add_argument("--adam_epsilon", type=float, default=1e-08, help="Epsilon value for the Adam optimizer")
-    parser.add_argument("--push_to_hub", action="store_true", help="Whether or not to push the model to the Hub.")
-    parser.add_argument("--hub_token", type=str, default=None, help="The token to use to push to the Model Hub.")
+    parser.add_argument(
+        "--adam_beta1",
+        type=float,
+        default=0.9,
+        help="The beta1 parameter for the Adam optimizer.",
+    )
+    parser.add_argument(
+        "--adam_beta2",
+        type=float,
+        default=0.999,
+        help="The beta2 parameter for the Adam optimizer.",
+    )
+    parser.add_argument(
+        "--adam_weight_decay", type=float, default=1e-2, help="Weight decay to use."
+    )
+    parser.add_argument(
+        "--adam_epsilon",
+        type=float,
+        default=1e-08,
+        help="Epsilon value for the Adam optimizer",
+    )
+    parser.add_argument(
+        "--push_to_hub",
+        action="store_true",
+        help="Whether or not to push the model to the Hub.",
+    )
+    parser.add_argument(
+        "--hub_token",
+        type=str,
+        default=None,
+        help="The token to use to push to the Model Hub.",
+    )
     parser.add_argument(
         "--hub_model_id",
         type=str,
@@ -310,7 +378,12 @@ def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable
             " and logging the images."
         ),
     )
-    parser.add_argument("--local_rank", type=int, default=-1, help="For distributed training: local_rank")
+    parser.add_argument(
+        "--local_rank",
+        type=int,
+        default=-1,
+        help="For distributed training: local_rank",
+    )
     parser.add_argument(
         "--checkpointing_steps",
         type=int,
@@ -336,8 +409,10 @@ def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable
         ),
     )
     parser.add_argument(
-        "--enable_xformers_memory_efficient_attention", action="store_true", default=True,
-        help="Whether or not to use xformers."
+        "--enable_xformers_memory_efficient_attention",
+        action="store_true",
+        default=True,
+        help="Whether or not to use xformers.",
     )
 
     args = parser.parse_args()
@@ -352,19 +427,22 @@ def parse_args(pretrained_model_name_or_path, emotion, train_data_dir, learnable
 
 
 def generate_attr(processor, model, attribute_total):
-    data_pro = processor(text=attribute_total, return_tensors="pt", padding=True).to(model.device)
+    data_pro = processor(text=attribute_total, return_tensors="pt", padding=True).to(
+        model.device
+    )
     data_pro = model.module.get_text_features(**data_pro)
     return data_pro
 
 
 def get_coefficient():
-    with open('dataset_balance/attr_coefficient_emotion_scene.pkl', 'rb') as f:
+    with open("dataset_balance/attr_coefficient_emotion_scene.pkl", "rb") as f:
         coffeicient = pickle.load(f)
-    with open('dataset_balance/attr_coefficient_emotion_object.pkl', 'rb') as f:
+    with open("dataset_balance/attr_coefficient_emotion_object.pkl", "rb") as f:
         tmp = pickle.load(f)
         coffeicient.update(tmp)
     # coffeicient = {key: 1 if value > 0 else 0 for key, value in coffeicient.items()}
     return coffeicient
+
 
 def gudiance_attr(attribute, tokenizer, text_encoder, weight_dtype):
     # TODO
@@ -385,7 +463,7 @@ def read_attr():
     attribute_total = []
     attribute_emo = {}
     for property in properties:
-        with open(f'dataset_balance/{property}_attr.pkl', 'rb') as f:
+        with open(f"dataset_balance/{property}_attr.pkl", "rb") as f:
             useful_attr = pickle.load(f)
             tmp = []
             for key in useful_attr:
@@ -415,17 +493,17 @@ class image_encoder(nn.Module):
 
 class TextualInversionDataset(Dataset):
     def __init__(
-            self,
-            data_root,
-            tokenizer,
-            learnable_property=None,  # [object, scene]
-            emotion=None,
-            size=512,
-            repeats=1,
-            flip_p=0.5,
-            set="train",
-            placeholder_token="*",
-            center_crop=False,
+        self,
+        data_root,
+        tokenizer,
+        learnable_property=None,  # [object, scene]
+        emotion=None,
+        size=512,
+        repeats=1,
+        flip_p=0.5,
+        set="train",
+        placeholder_token="*",
+        center_crop=False,
     ):
         if learnable_property is None:
             learnable_property = ["scene"]
@@ -437,11 +515,11 @@ class TextualInversionDataset(Dataset):
         if learnable_property != ["all"]:
             for folder in learnable_property:
                 self.data_root = os.path.join(data_root, folder)
-                with open(f'./dataset_balance/{folder}_norepeat.pkl', 'rb') as f:
+                with open(f"./dataset_balance/{folder}_norepeat.pkl", "rb") as f:
                     tmp = pickle.load(f)
                     self.image_paths.extend(tmp)
             for path in self.image_paths:
-                attribute = path.split('/')[-2].split(')')[-1].lower().replace(' ', '_')
+                attribute = path.split("/")[-2].split(")")[-1].lower().replace(" ", "_")
                 if (attribute in self.attribute_list) is False:
                     self.attribute_list.append(attribute)
         else:
@@ -450,7 +528,7 @@ class TextualInversionDataset(Dataset):
                 for file in file_path:
                     if file.endswith("jpg"):
                         tmp = os.path.join(root, file)
-                        attribute = tmp.split('/')[-2].split(')')[-1]
+                        attribute = tmp.split("/")[-2].split(")")[-1]
                         if (attribute in self.attribute_list) is False:
                             self.attribute_list.append(attribute.lower())
                         if emotion != "all":
@@ -471,10 +549,12 @@ class TextualInversionDataset(Dataset):
 
         self.flip_transform = transforms.RandomHorizontalFlip(p=self.flip_p)
         self.tfm = transforms.Compose(
-            [transforms.Resize(256),
-             transforms.CenterCrop(224),
-             transforms.ToTensor(),
-             transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+            [
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+            ]
         )
 
     def __len__(self):
@@ -490,10 +570,12 @@ class TextualInversionDataset(Dataset):
         img_feat = self.tfm(image.copy())
         example["image"] = img_feat
         if self.learnable_property != "all":
-            example["attribute"] = path.split('/')[-2].split(')')[-1].lower().replace(' ','_')
+            example["attribute"] = (
+                path.split("/")[-2].split(")")[-1].lower().replace(" ", "_")
+            )
         else:
-            example["attribute"] = ' '
-        example["emotion"] = path.split('/')[-1].split('_')[0]
+            example["attribute"] = " "
+        example["emotion"] = path.split("/")[-1].split("_")[0]
 
         if not image.mode == "RGB":
             image = image.convert("RGB")
@@ -521,7 +603,9 @@ class TextualInversionDataset(Dataset):
                 img.shape[0],
                 img.shape[1],
             )
-            img = img[(h - crop) // 2: (h + crop) // 2, (w - crop) // 2: (w + crop) // 2]
+            img = img[
+                (h - crop) // 2 : (h + crop) // 2, (w - crop) // 2 : (w + crop) // 2
+            ]
 
         image = Image.fromarray(img)
         image = image.resize((self.size, self.size))
@@ -537,7 +621,10 @@ def save_pic(img, path):
     if path is not None:
         os.makedirs(path, exist_ok=True)
     try:
-        files = sorted([x for x in os.listdir(path) if x.endswith(".jpg")], key=lambda x: int(x.split(".")[0]))
+        files = sorted(
+            [x for x in os.listdir(path) if x.endswith(".jpg")],
+            key=lambda x: int(x.split(".")[0]),
+        )
         num = int(files[-1].split(".")[0])
         img.save(f"{path}/{num + 1}.jpg")
     except:
@@ -545,7 +632,9 @@ def save_pic(img, path):
 
 
 def main(args):
-    accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=args.output_dir)
+    accelerator_project_config = ProjectConfiguration(
+        project_dir=args.output_dir, logging_dir=args.output_dir
+    )
     # writer = SummaryWriter(log_dir=args.output_dir)
     accelerator = Accelerator(
         gradient_accumulation_steps=args.gradient_accumulation_steps,
@@ -563,16 +652,26 @@ def main(args):
 
         if args.push_to_hub:
             repo_id = create_repo(
-                repo_id=args.hub_model_id or Path(args.output_dir).name, exist_ok=True, token=args.hub_token
+                repo_id=args.hub_model_id or Path(args.output_dir).name,
+                exist_ok=True,
+                token=args.hub_token,
             ).repo_id
 
     # Load scheduler and models
-    tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_name_or_path, subfolder="tokenizer")
-    noise_scheduler = DDPMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
-    text_encoder = CLIPTextModel.from_pretrained(
-        args.pretrained_model_name_or_path, subfolder="text_encoder", revision=args.revision
+    tokenizer = CLIPTokenizer.from_pretrained(
+        args.pretrained_model_name_or_path, subfolder="tokenizer"
     )
-    vae = AutoencoderKL.from_pretrained(args.pretrained_model_name_or_path, subfolder="vae", revision=args.revision)
+    noise_scheduler = DDPMScheduler.from_pretrained(
+        args.pretrained_model_name_or_path, subfolder="scheduler"
+    )
+    text_encoder = CLIPTextModel.from_pretrained(
+        args.pretrained_model_name_or_path,
+        subfolder="text_encoder",
+        revision=args.revision,
+    )
+    vae = AutoencoderKL.from_pretrained(
+        args.pretrained_model_name_or_path, subfolder="vae", revision=args.revision
+    )
     unet = UNet2DConditionModel.from_pretrained(
         args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision
     )
@@ -583,13 +682,18 @@ def main(args):
     encoder = image_encoder()
 
     classifier = emo_classifier()
-    state = torch.load("weights/Clip_emotion_classifier/time_2023-11-12_03-29-best.pth", map_location='cpu')
+    state = torch.load(
+        "weights/Clip_emotion_classifier/time_2023-11-12_03-29-best.pth",
+        map_location="cpu",
+    )
     classifier.load_state_dict(state)
     classifier.eval()
 
     model_dict = {
         "FC": lambda args: FC(),
-        "MLP": lambda args: MLP(args.num_fc_layers, args.need_ReLU, args.need_LN, args.need_Dropout),
+        "MLP": lambda args: MLP(
+            args.num_fc_layers, args.need_ReLU, args.need_LN, args.need_Dropout
+        ),
         "SimpleMLP": lambda args: SimpleMLP(args.need_ReLU, args.need_Dropout),
     }
     mapper = model_dict[args.model](args)
@@ -606,7 +710,9 @@ def main(args):
     placeholder_tokens = [args.placeholder_token]
 
     if args.num_vectors < 1:
-        raise ValueError(f"--num_vectors has to be larger or equal to 1, but is {args.num_vectors}")
+        raise ValueError(
+            f"--num_vectors has to be larger or equal to 1, but is {args.num_vectors}"
+        )
 
     # add dummy tokens for multi-vector
     additional_tokens = []
@@ -642,9 +748,12 @@ def main(args):
     if args.enable_xformers_memory_efficient_attention:
         if is_xformers_available():
             import xformers
+
             unet.enable_xformers_memory_efficient_attention()
         else:
-            raise ValueError("xformers is not available. Make sure it is installed correctly")
+            raise ValueError(
+                "xformers is not available. Make sure it is installed correctly"
+            )
 
     # Enable TF32 for faster training on Ampere GPUs,
     # cf https://pytorch.org/docs/stable/notes/cuda.html#tensorfloat-32-tf32-on-ampere-devices
@@ -653,7 +762,10 @@ def main(args):
 
     if args.scale_lr:
         args.learning_rate = (
-                args.learning_rate * args.gradient_accumulation_steps * args.train_batch_size * accelerator.num_processes
+            args.learning_rate
+            * args.gradient_accumulation_steps
+            * args.train_batch_size
+            * accelerator.num_processes
         )
 
     # Initialize the optimizer
@@ -682,14 +794,21 @@ def main(args):
         set="train",
     )
     train_dataloader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers
+        train_dataset,
+        batch_size=args.train_batch_size,
+        shuffle=True,
+        num_workers=args.dataloader_num_workers,
     )
     if args.validation_epochs is not None:
-        args.validation_steps = args.validation_epochs * len(train_dataset) // accelerator.num_processes
+        args.validation_steps = (
+            args.validation_epochs * len(train_dataset) // accelerator.num_processes
+        )
 
     # Scheduler and math around the number of training steps.
     overrode_max_train_steps = False
-    num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
+    num_update_steps_per_epoch = math.ceil(
+        len(train_dataloader) / args.gradient_accumulation_steps
+    )
     if args.max_train_steps is None:
         args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
         overrode_max_train_steps = True
@@ -703,8 +822,24 @@ def main(args):
     )
 
     # Prepare everything with our `accelerator`.
-    text_encoder, optimizer, train_dataloader, lr_scheduler, encoder, mapper, model, classifier = accelerator.prepare(
-        text_encoder, optimizer, train_dataloader, lr_scheduler, encoder, mapper, model, classifier
+    (
+        text_encoder,
+        optimizer,
+        train_dataloader,
+        lr_scheduler,
+        encoder,
+        mapper,
+        model,
+        classifier,
+    ) = accelerator.prepare(
+        text_encoder,
+        optimizer,
+        train_dataloader,
+        lr_scheduler,
+        encoder,
+        mapper,
+        model,
+        classifier,
     )
 
     # For mixed precision training we cast all non-trainable weigths (vae, non-lora text_encoder and non-lora unet) to half-precision
@@ -721,7 +856,9 @@ def main(args):
     classifier.to(accelerator.device, dtype=weight_dtype)
 
     # We need to recalculate our total training steps as the size of the training dataloader may have changed.
-    num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
+    num_update_steps_per_epoch = math.ceil(
+        len(train_dataloader) / args.gradient_accumulation_steps
+    )
     if overrode_max_train_steps:
         args.max_train_steps = args.num_train_epochs * num_update_steps_per_epoch
     # Afterwards we recalculate our number of training epochs
@@ -733,7 +870,11 @@ def main(args):
         accelerator.init_trackers("Emotion_generation")
 
     # Train!
-    total_batch_size = args.train_batch_size * accelerator.num_processes * args.gradient_accumulation_steps
+    total_batch_size = (
+        args.train_batch_size
+        * accelerator.num_processes
+        * args.gradient_accumulation_steps
+    )
 
     global_step = 0
     first_epoch = 0
@@ -756,10 +897,15 @@ def main(args):
 
             resume_global_step = global_step * args.gradient_accumulation_steps
             first_epoch = global_step // num_update_steps_per_epoch
-            resume_step = resume_global_step % (num_update_steps_per_epoch * args.gradient_accumulation_steps)
+            resume_step = resume_global_step % (
+                num_update_steps_per_epoch * args.gradient_accumulation_steps
+            )
 
     # Only show the progress bar once on each machine.
-    progress_bar = tqdm(range(global_step, args.max_train_steps), disable=not accelerator.is_local_main_process)
+    progress_bar = tqdm(
+        range(global_step, args.max_train_steps),
+        disable=not accelerator.is_local_main_process,
+    )
     progress_bar.set_description("Steps")
 
     # initialize the hook method
@@ -769,14 +915,14 @@ def main(args):
         return grad + grad_pseudo
 
     label2idx = {
-      "amusement": 0,
-      "awe": 1,
-      "contentment": 2,
-      "excitement": 3,
-      "anger": 4,
-      "disgust": 5,
-      "fear": 6,
-      "sadness": 7
+        "amusement": 0,
+        "awe": 1,
+        "contentment": 2,
+        "excitement": 3,
+        "anger": 4,
+        "disgust": 5,
+        "fear": 6,
+        "sadness": 7,
     }
     total_attr, _ = read_attr()
     total_attr_embed = generate_attr(processor, model, total_attr).detach()
@@ -788,7 +934,11 @@ def main(args):
         mapper.train()
         for step, batch in enumerate(train_dataloader):
             # Skip steps until we reach the resumed step
-            if args.resume_from_checkpoint and epoch == first_epoch and step < resume_step:
+            if (
+                args.resume_from_checkpoint
+                and epoch == first_epoch
+                and step < resume_step
+            ):
                 if step % args.gradient_accumulation_steps == 0:
                     progress_bar.update(1)
                     num += total_batch_size
@@ -806,19 +956,29 @@ def main(args):
                     pred_emd.register_hook(change_grad)
 
                     # Change the embedding of new token
-                    token_embeds = text_encoder.module.get_input_embeddings().weight.data
+                    token_embeds = (
+                        text_encoder.module.get_input_embeddings().weight.data
+                    )
                     token_embeds[placeholder_token_ids] = pred_emd
 
                     # Convert images to latent space
-                    latents = vae.encode(batch["pixel_values"].to(dtype=weight_dtype)).latent_dist.sample().detach()
+                    latents = (
+                        vae.encode(batch["pixel_values"].to(dtype=weight_dtype))
+                        .latent_dist.sample()
+                        .detach()
+                    )
                     latents = latents * vae.config.scaling_factor
 
                     # Sample noise that we'll add to the latents
                     noise = torch.randn_like(latents)
                     bsz = latents.shape[0]
                     # Sample a random timestep for each image
-                    timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,),
-                                              device=latents.device)
+                    timesteps = torch.randint(
+                        0,
+                        noise_scheduler.config.num_train_timesteps,
+                        (bsz,),
+                        device=latents.device,
+                    )
                     timesteps = timesteps.long()
 
                     # Add noise to the latents according to the noise magnitude at each timestep
@@ -832,7 +992,9 @@ def main(args):
 
                     project_semantic = linear_project(pooled_output)
                     # Predict the noise residual
-                    model_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
+                    model_pred = unet(
+                        noisy_latents, timesteps, encoder_hidden_states
+                    ).sample
 
                     # Get the target for loss depending on the prediction type
                     if noise_scheduler.config.prediction_type == "epsilon":
@@ -840,22 +1002,34 @@ def main(args):
                     elif noise_scheduler.config.prediction_type == "v_prediction":
                         target = noise_scheduler.get_velocity(latents, noise, timesteps)
                     else:
-                        raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
+                        raise ValueError(
+                            f"Unknown prediction type {noise_scheduler.config.prediction_type}"
+                        )
 
-                    loss_reconstruction = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
+                    loss_reconstruction = F.mse_loss(
+                        model_pred.float(), target.float(), reduction="mean"
+                    )
 
                     # loss of distance to attribute target
 
                     if batch["attribute"][0].lower() in total_attr:
-                        score = F.cosine_similarity(total_attr_embed, project_semantic).unsqueeze(0)
+                        score = F.cosine_similarity(
+                            total_attr_embed, project_semantic
+                        ).unsqueeze(0)
                         fun_loss_attr = nn.CrossEntropyLoss()
                         index_attr = total_attr.index(batch["attribute"][0].lower())
-                        index_attr = torch.tensor([index_attr]).detach().to(score.device)
+                        index_attr = (
+                            torch.tensor([index_attr]).detach().to(score.device)
+                        )
                         loss_attr = fun_loss_attr(score, index_attr)
                     else:
-                        loss_attr = torch.tensor([0.0], requires_grad=True).to(mapper.device)
+                        loss_attr = torch.tensor([0.0], requires_grad=True).to(
+                            mapper.device
+                        )
                     if batch["attribute"][0] in attr_coefficient:
-                        attr_rate = attr_coefficient[batch["attribute"][0]][label2idx[batch['emotion'][0]]].item()
+                        attr_rate = attr_coefficient[batch["attribute"][0]][
+                            label2idx[batch["emotion"][0]]
+                        ].item()
                         if attr_rate < args.threshold:
                             attr_rate = 0
                     else:
@@ -869,10 +1043,19 @@ def main(args):
                     loss_emo = fun_loss_emo(pre_emo, index_emo)
 
                     # assume that distance under threshold is the same object
-                    loss_forward = (1 - attr_rate)*loss_reconstruction + args.attr_rate * attr_rate * loss_attr + args.emo_rate * loss_emo
+                    loss_forward = (
+                        (1 - attr_rate) * loss_reconstruction
+                        + args.attr_rate * attr_rate * loss_attr
+                        + args.emo_rate * loss_emo
+                    )
 
                     accelerator.backward(loss_forward)
-                    grad_pseudo = text_encoder.module.get_input_embeddings().weight.grad[-1].detach().unsqueeze(0)
+                    grad_pseudo = (
+                        text_encoder.module.get_input_embeddings()
+                        .weight.grad[-1]
+                        .detach()
+                        .unsqueeze(0)
+                    )
 
                     # fake loss in order to backward
                     loss_fake = torch.mean(pred_emd)
@@ -886,7 +1069,9 @@ def main(args):
 
                     # Let's make sure we don't update any embedding weights besides the newly added token
                     index_no_updates = torch.ones((len(tokenizer),), dtype=torch.bool)
-                    index_no_updates[min(placeholder_token_ids): max(placeholder_token_ids) + 1] = False
+                    index_no_updates[
+                        min(placeholder_token_ids) : max(placeholder_token_ids) + 1
+                    ] = False
 
             # Checks if the accelerator has performed an optimization step behind the scenes
             if accelerator.sync_gradients:
@@ -898,35 +1083,60 @@ def main(args):
                         # _before_ saving state, check if this save would set us over the `checkpoints_total_limit`
                         if args.checkpoints_total_limit is not None:
                             checkpoints = os.listdir(args.output_dir)
-                            checkpoints = [d for d in checkpoints if d.startswith("checkpoint")]
-                            checkpoints = sorted(checkpoints, key=lambda x: int(x.split("-")[1]))
+                            checkpoints = [
+                                d for d in checkpoints if d.startswith("checkpoint")
+                            ]
+                            checkpoints = sorted(
+                                checkpoints, key=lambda x: int(x.split("-")[1])
+                            )
 
                             # before we save the new checkpoint, we need to have at _most_ `checkpoints_total_limit - 1` checkpoints
                             if len(checkpoints) >= args.checkpoints_total_limit:
-                                num_to_remove = len(checkpoints) - args.checkpoints_total_limit + 1
+                                num_to_remove = (
+                                    len(checkpoints) - args.checkpoints_total_limit + 1
+                                )
                                 removing_checkpoints = checkpoints[0:num_to_remove]
 
                                 for removing_checkpoint in removing_checkpoints:
-                                    removing_checkpoint = os.path.join(args.output_dir, removing_checkpoint)
+                                    removing_checkpoint = os.path.join(
+                                        args.output_dir, removing_checkpoint
+                                    )
                                     shutil.rmtree(removing_checkpoint)
 
-                        save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
+                        save_path = os.path.join(
+                            args.output_dir, f"checkpoint-{global_step}"
+                        )
                         accelerator.save_state(save_path)
 
                     if global_step % args.validation_steps == 0:
-                        tmp = os.path.join(args.output_dir, f"{global_step // len(train_dataloader)}")
+                        tmp = os.path.join(
+                            args.output_dir, f"{global_step // len(train_dataloader)}"
+                        )
                         os.makedirs(tmp, exist_ok=True)
-                        torch.save(accelerator.unwrap_model(mapper).state_dict(),
-                                   os.path.join(
-                                       os.path.join(args.output_dir, f"{global_step // len(train_dataloader)}"),
-                                       "mapper.pth"))
+                        torch.save(
+                            accelerator.unwrap_model(mapper).state_dict(),
+                            os.path.join(
+                                os.path.join(
+                                    args.output_dir,
+                                    f"{global_step // len(train_dataloader)}",
+                                ),
+                                "mapper.pth",
+                            ),
+                        )
                     for tracker in accelerator.trackers:
                         tracker.writer.add_scalar("Loss", loss_forward, global_step)
-                        tracker.writer.add_scalar("loss_reconstruction", loss_reconstruction, global_step)
-                        tracker.writer.add_scalar("loss_attribute", loss_attr, global_step)
+                        tracker.writer.add_scalar(
+                            "loss_reconstruction", loss_reconstruction, global_step
+                        )
+                        tracker.writer.add_scalar(
+                            "loss_attribute", loss_attr, global_step
+                        )
                         tracker.writer.add_scalar("loss_emo", loss_emo, global_step)
-            logs = {"loss": loss.detach().item(), "loss_attr": loss_attr.detach().item(),
-                    "lr": lr_scheduler.get_last_lr()[0]}
+            logs = {
+                "loss": loss.detach().item(),
+                "loss_attr": loss_attr.detach().item(),
+                "lr": lr_scheduler.get_last_lr()[0],
+            }
             progress_bar.set_postfix(**logs)
             if global_step >= args.max_train_steps:
                 break
@@ -946,7 +1156,10 @@ def main(args):
                 tokenizer=tokenizer,
             )
             pipeline.save_pretrained(args.output_dir)
-        torch.save(accelerator.unwrap_model(mapper).state_dict(), os.path.join(args.output_dir, "mapper.pth"))
+        torch.save(
+            accelerator.unwrap_model(mapper).state_dict(),
+            os.path.join(args.output_dir, "mapper.pth"),
+        )
 
     accelerator.end_training()
 
@@ -955,19 +1168,19 @@ if __name__ == "__main__":
     import yaml
 
     def parameter(file_name):
-        with open(file_name, 'r') as file:
+        with open(file_name, "r") as file:
             params = yaml.safe_load(file)
 
         args = parse_args(**params)
         params["project_name"] = os.path.basename(__file__)
         params_json = json.dumps(params)
-        os.makedirs(f'{params["output_dir"]}',exist_ok=True)
-        with open(f'{params["output_dir"]}/params.json', 'w') as f:
+        os.makedirs(f'{params["output_dir"]}', exist_ok=True)
+        with open(f'{params["output_dir"]}/params.json', "w") as f:
             f.write(params_json)
         return args
 
     # Choose your config file
-    file_name = 'config/config.yaml'
+    file_name = "config/config.yaml"
 
     args = parameter(file_name)
     main(args)

@@ -2,20 +2,17 @@ from torchvision import models
 import torch.nn as nn
 
 
-
 class BackBone(nn.Module):
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         super().__init__()
         self.cnn = models.resnet50(pretrained=True)
 
         self.backbone = nn.Sequential(*list(self.cnn.children())[:-2])
         self.flaten = nn.Sequential(nn.AvgPool2d(kernel_size=7), nn.Flatten())
         self.fc_1 = nn.Linear(2048, 768)
-        self.fc_2 = nn.Sequential(
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(768, 8)
-        )
+        self.fc_2 = nn.Sequential(nn.ReLU(), nn.Dropout(0.5), nn.Linear(768, 8))
 
     def forward(self, x):
         x = self.backbone(x)
@@ -36,7 +33,9 @@ class FC(nn.Module):
 
 
 class MLP(nn.Module):
-    def __init__(self, num_fc_layers=2, need_ReLU=False, need_LN=False, need_Dropout=False):
+    def __init__(
+        self, num_fc_layers=2, need_ReLU=False, need_LN=False, need_Dropout=False
+    ):
         super(MLP, self).__init__()
         layers = []
         layers.append(nn.Linear(768, 1024))
@@ -80,13 +79,12 @@ class SimpleMLP(nn.Module):
 
 
 class emo_classifier(nn.Module):
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         super(emo_classifier, self).__init__()
         self.fc = nn.Linear(768, 8)
 
     def forward(self, x):
         x = self.fc(x)
         return x
-
-
-

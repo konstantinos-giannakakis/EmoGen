@@ -2,6 +2,9 @@ import PIL.Image as Image
 import os
 import torch
 import torch.nn as nn
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from model import BackBone
 from torchvision import transforms
 from torch.utils.data import Dataset
@@ -14,7 +17,7 @@ class image_encoder(nn.Module):
     def __init__(self):
         super(image_encoder, self).__init__()
         self.resnet = BackBone()
-        state = torch.load("weights/2023-08-22-best.pth")
+        state = torch.load("weights/image_encoder/2023-08-22-best.pth")
         self.resnet.load_state_dict(state)
         # print(self.resnet)
         self.resnet50 = torch.nn.Sequential(*list(self.resnet.children())[1:-1])
@@ -29,7 +32,16 @@ class EmoSet(Dataset):
     def __init__(self, data_root, transform):
         self.data_root = data_root
         self.transform = transform
-        self.emotion = ["amusement", "sadness", "awe", "anger", "contentment", "disgust", "fear", "excitement"]
+        self.emotion = [
+            "amusement",
+            "sadness",
+            "awe",
+            "anger",
+            "contentment",
+            "disgust",
+            "fear",
+            "excitement",
+        ]
 
         self.image_paths = []
         for root, _, file_path in os.walk(data_root):
@@ -37,13 +49,12 @@ class EmoSet(Dataset):
                 if file.endswith("jpg"):
                     self.image_paths.append(os.path.join(root, file))
 
-
     def __getitem__(self, i):
         path = self.image_paths[i]
-        image = Image.open(path).convert('RGB')
+        image = Image.open(path).convert("RGB")
         if self.transform is not None:
             image = self.transform(image)
-        emo, number = path.split('/')[-1].split('_')
+        emo, number = path.split("/")[-1].split("_")
         example = {}
         example["image"] = image
         example["emo"] = emo
@@ -54,20 +65,24 @@ class EmoSet(Dataset):
         return len(self.image_paths)
 
 
-data_root = "EmoSet/image/"
+data_root = "/mnt/c/Users/giann/Downloads/EmoSet-118K/image/"
 batch_size = 5
-tfm = transforms.Compose([transforms.Resize(256),
-                                transforms.CenterCrop(224),
-                                transforms.ToTensor(),
-                                transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])])
+tfm = transforms.Compose(
+    [
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]),
+    ]
+)
 
 
 cnn = image_encoder()
 cnn.eval()
 Emodata = EmoSet(data_root=data_root, transform=tfm)
 train_dataloader = torch.utils.data.DataLoader(
-        Emodata, batch_size=batch_size, shuffle=False, num_workers=5
-    )
+    Emodata, batch_size=batch_size, shuffle=False, num_workers=5
+)
 
 accelerator_project_config = ProjectConfiguration()
 
@@ -76,13 +91,15 @@ accelerator = Accelerator(
 )
 cnn, train_dataloader = accelerator.prepare(cnn, train_dataloader)
 
-progress_bar = tqdm(range(0, len(train_dataloader)), disable=not accelerator.is_local_main_process)
+progress_bar = tqdm(
+    range(0, len(train_dataloader)), disable=not accelerator.is_local_main_process
+)
 progress_bar.set_description("Steps")
 
 for step, batch in enumerate(train_dataloader):
     img = batch["image"]
     vec = cnn(img)
-    size = len(batch['emo'])
+    size = len(batch["emo"])
     for i in range(size):
         emo, number = batch["emo"][i], batch["number"][i]
         path = f"./emo_space/{emo}"
